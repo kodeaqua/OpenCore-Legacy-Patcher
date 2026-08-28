@@ -24,6 +24,59 @@ from ..datasets import (
 )
 
 
+# ---------------------------------------------------------------------------
+# EXPERIMENTAL: Amber Lake-Y (UHD Graphics 617) framebuffer injection
+#
+# MacBookAir8,1 / MacBookAir8,2 are the only T2 Macs with an Amber Lake-Y iGPU.
+# No macOS 26 (Tahoe) native Mac uses the AML-Y framebuffer layout, so when the
+# model is unrecognised the stock framebuffer is never set up and the installer /
+# desktop comes up to a grey screen (local panel only - VNC shows the real UI).
+#
+# This injects a working framebuffer layout + WhateverGreen on the iGPU so the
+# panel lights up. Tune the values below against real hardware, rebuild, retest.
+#
+# "AAPL,ig-platform-id" / "device-id" values are 4-byte <data>, written here as
+# LITTLE-ENDIAN hex strings (the on-disk byte order). e.g. platform-id
+# 0x59260007 -> "07002659"  (verified against a stock Kaby Lake Mac).
+#
+# Candidate "AAPL,ig-platform-id" values:
+#   00001C59  = 0x591C0000  AML-Y / UHD 615-617 mobile ULX GT2   <- try first (closest to stock)
+#   00001659  = 0x59160000  KBL-U mobile HD 620 (eDP + 2x DP)    <- pair with device-id "16590000"
+#   00001B59  = 0x591B0000  KBL-H mobile HD 630 (eDP + 3 conn)
+#   00001259  = 0x59120000  KBL desktop HD 630 (proven present on Tahoe via iMac18,1)
+#
+# If you only need the installer to *render* (unaccelerated is fine to get in),
+# put "-igfxvesa" in _MBA8_EXTRA_BOOT_ARGS instead of chasing a platform-id.
+# ---------------------------------------------------------------------------
+_MBA8_MODELS: list = ["MacBookAir8,1", "MacBookAir8,2"]
+_MBA8_IGPU_PCI_PATH: str = "PciRoot(0x0)/Pci(0x2,0x0)"
+
+# Keys whose values are 4-byte <data> blobs (given here as plain hex strings)
+_MBA8_DATA_KEYS: set = {
+    "AAPL,ig-platform-id",
+    "device-id",
+    "framebuffer-stolenmem",
+    "framebuffer-fbmem",
+    "framebuffer-unifiedmem",
+}
+
+_MBA8_IGPU_PROPERTIES: dict = {
+    "AAPL,ig-platform-id":      "00001C59",  # knob: framebuffer layout, LE hex (see notes above)
+    "device-id":               "",           # knob: iGPU device-id spoof, LE hex ("" = keep native 0x87C0; "16590000" = 0x5916)
+    "agdpmod":                 "vit9696",     # bypass AppleGraphicsDevicePolicy board-id check
+    "rebuild-device-tree":     1,
+    "enable-metal":            1,
+    "framebuffer-patch-enable": 1,
+    # "framebuffer-stolenmem": "00003001",   # 0x01300000, 19 MB - uncomment if you get glitches/black flicker
+    # "framebuffer-fbmem":     "00009000",   # 0x00900000, 9 MB
+    # "framebuffer-unifiedmem": "00000080",  # 0x80000000, 2 GB
+}
+
+# Appended verbatim to boot-args for the MacBookAir8,x build. Handy for
+# iterating without editing config.plist by hand, e.g. "-igfxvesa -v debug=0x100".
+_MBA8_EXTRA_BOOT_ARGS: str = ""
+
+
 class BuildGraphicsAudio:
     """
     Build Library for Graphics and Audio Support
@@ -49,6 +102,7 @@ class BuildGraphicsAudio:
 
         self._imac_mxm_patching()
         self._graphics_handling()
+        self._amber_lake_framebuffer_handling()
         self._audio_handling()
         self._firmware_handling()
         self._spoof_handling()
@@ -136,6 +190,62 @@ class BuildGraphicsAudio:
                             self.config["NVRAM"]["Add"]["7C436110-AB2A-4BBB-A880-FE41995C9F82"].update({"nvda_drv": binascii.unhexlify("31")})
                             if "nvda_drv" not in self.config["NVRAM"]["Delete"]["7C436110-AB2A-4BBB-A880-FE41995C9F82"]:
                                 self.config["NVRAM"]["Delete"]["7C436110-AB2A-4BBB-A880-FE41995C9F82"] += ["nvda_drv"]
+
+
+    def _amber_lake_framebuffer_handling(self) -> None:
+        """
+        EXPERIMENTAL: Amber Lake-Y (UHD Graphics 617) framebuffer injection for
+        MacBookAir8,1 / MacBookAir8,2 on macOS Tahoe.
+
+        Tune _MBA8_IGPU_PROPERTIES / _MBA8_EXTRA_BOOT_ARGS at the top of this file.
+        No-op for every other model.
+        """
+
+        if self.model not in _MBA8_MODELS:
+            return
+
+        logging.info("- Injecting EXPERIMENTAL Amber Lake-Y framebuffer properties (MacBookAir8,x)")
+
+        # Resolve the iGPU device path (probe on real hardware, fall back to the
+        # canonical Intel iGPU location for custom-model / headless builds)
+        igpu_path = _MBA8_IGPU_PCI_PATH
+        if not self.constants.custom_model and self.computer and self.computer.igpu and self.computer.igpu.pci_path:
+            igpu_path = self.computer.igpu.pci_path
+        logging.info(f"- Using iGPU device path: {igpu_path}")
+
+        properties: dict = {}
+        for key, value in _MBA8_IGPU_PROPERTIES.items():
+            if value == "":
+                continue
+            if key in _MBA8_DATA_KEYS:
+                try:
+                    properties[key] = binascii.unhexlify(value)
+                except (binascii.Error, ValueError, TypeError):
+                    logging.info(f"  - Skipping malformed hex value for {key}: {value!r}")
+                    continue
+            else:
+                properties[key] = value
+            logging.info(f"  - {key} = {value}")
+
+        existing = self.config["DeviceProperties"]["Add"].get(igpu_path, {})
+        existing.update(properties)
+        self.config["DeviceProperties"]["Add"][igpu_path] = existing
+
+        if support.BuildSupport(self.model, self.constants, self.config).get_kext_by_bundle_path("WhateverGreen.kext")["Enabled"] is not True:
+            support.BuildSupport(self.model, self.constants, self.config).enable_kext("WhateverGreen.kext", self.constants.whatevergreen_version, self.constants.whatevergreen_path)
+
+        if _MBA8_EXTRA_BOOT_ARGS.strip():
+            boot_args = self.config["NVRAM"]["Add"]["7C436110-AB2A-4BBB-A880-FE41995C9F82"]["boot-args"]
+            for arg in _MBA8_EXTRA_BOOT_ARGS.split():
+                if arg not in boot_args:
+                    boot_args += f" {arg}"
+            self.config["NVRAM"]["Add"]["7C436110-AB2A-4BBB-A880-FE41995C9F82"]["boot-args"] = boot_args
+            logging.info(f"- Appended MacBookAir8,x boot-args: {_MBA8_EXTRA_BOOT_ARGS.strip()}")
+
+        self.config["#Revision"]["Experimental-MBA8-Framebuffer"] = ", ".join(
+            f"{k}={v}" for k, v in _MBA8_IGPU_PROPERTIES.items() if v != ""
+        ) + (f" | boot-args: {_MBA8_EXTRA_BOOT_ARGS.strip()}" if _MBA8_EXTRA_BOOT_ARGS.strip() else "")
+
 
     def _backlight_path_detection(self) -> None:
         """

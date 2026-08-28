@@ -7,6 +7,10 @@
   - Classify Amber Lake-Y (UHD Graphics 617) as Kaby Lake
   - Kaby Lake (incl. iMac18,x) graphics remain native on Tahoe; boots via the
     existing Board ID exemption path, no graphics root patch required
+  - EXPERIMENTAL: MacBookAir8,1 / MacBookAir8,2 (T2) re-added as bring-up
+    targets, with a tunable Amber Lake-Y iGPU framebuffer injection in
+    graphics_audio.py to work around the grey-screen installer. T2 installer
+    gating is still unresolved.
 - Disable repatching a dirty root volume
   - Prevents issues if existing patches are partially overwritten
   - Thanks @crystall1nedev!
