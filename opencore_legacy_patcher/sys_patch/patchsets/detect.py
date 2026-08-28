@@ -21,7 +21,6 @@ from .hardware.graphics import (
     intel_haswell,
     intel_broadwell,
     intel_skylake,
-    intel_kaby_lake,
 
     nvidia_tesla,
     nvidia_kepler,
@@ -114,7 +113,6 @@ class HardwarePatchsetDetection:
             intel_haswell.IntelHaswell,
             intel_broadwell.IntelBroadwell,
             intel_skylake.IntelSkylake,
-            intel_kaby_lake.IntelKabyLake,
 
             nvidia_tesla.NvidiaTesla,
             nvidia_kepler.NvidiaKepler,

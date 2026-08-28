@@ -4,8 +4,9 @@
 - macOS Tahoe bring-up (work in progress):
   - Raise root patch and installer support ceiling to macOS 26, Tahoe
   - Fix XNU <-> marketing version conversion for the macOS 15 -> 26 discontinuity
-  - Add Intel Kaby Lake graphics patch set (covers Amber Lake-Y / UHD 617)
-  - Restore iMac18,1 and MacBookAir8,x as supported SMBIOS targets
+  - Classify Amber Lake-Y (UHD Graphics 617) as Kaby Lake
+  - Kaby Lake (incl. iMac18,x) graphics remain native on Tahoe; boots via the
+    existing Board ID exemption path, no graphics root patch required
 - Disable repatching a dirty root volume
   - Prevents issues if existing patches are partially overwritten
   - Thanks @crystall1nedev!
