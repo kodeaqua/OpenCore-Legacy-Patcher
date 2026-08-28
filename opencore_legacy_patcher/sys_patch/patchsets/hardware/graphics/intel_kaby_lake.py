@@ -4,6 +4,9 @@ intel_kaby_lake.py: Intel Kaby Lake detection
 Kaby Lake (Gen 9.5) iGPUs retained native support through macOS 15, Sequoia.
 Support was dropped with macOS 26, Tahoe, alongside every Kaby Lake Mac.
 
+Also covers Amber Lake-Y (UHD Graphics 617, MacBookAir8,x), which shares the
+AppleIntelKBLGraphics driver family.
+
 NOTE: The binaries referenced below (AppleIntelKBLGraphics*, sourced from the
 last Sequoia release that shipped them) must be added to PatcherSupportPkg
 under the version directories resolved in `_resolve_kaby_lake_binaries()` /

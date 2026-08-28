@@ -513,7 +513,7 @@ smbios_dictionary = {
         "Screen Size": 13,
         "Ethernet Chipset": None,
         "Stock GPUs": [
-            device_probe.Intel.Archs.Coffee_Lake
+            device_probe.Intel.Archs.Kaby_Lake  # UHD Graphics 617 (Amber Lake-Y)
         ],
         "Stock Storage": [
             "NVMe",
@@ -530,7 +530,7 @@ smbios_dictionary = {
         "Screen Size": 13,
         "Ethernet Chipset": None,
         "Stock GPUs": [
-            device_probe.Intel.Archs.Coffee_Lake
+            device_probe.Intel.Archs.Kaby_Lake  # UHD Graphics 617 (Amber Lake-Y)
         ],
         "Stock Storage": [
             "NVMe",
@@ -549,7 +549,7 @@ smbios_dictionary = {
         "Screen Size": 13,
         "Ethernet Chipset": None,
         "Stock GPUs": [
-            device_probe.Intel.Archs.Coffee_Lake
+            device_probe.Intel.Archs.Kaby_Lake  # UHD Graphics 617 (Amber Lake-Y)
         ],
         "Stock Storage": [
             "NVMe",
@@ -567,7 +567,7 @@ smbios_dictionary = {
         "Screen Size": 13,
         "Ethernet Chipset": None,
         "Stock GPUs": [
-            device_probe.Intel.Archs.Coffee_Lake
+            device_probe.Intel.Archs.Kaby_Lake  # UHD Graphics 617 (Amber Lake-Y)
         ],
         "Stock Storage": [
             "NVMe",
