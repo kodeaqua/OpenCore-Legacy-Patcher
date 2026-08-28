@@ -76,6 +76,13 @@ _MBA8_IGPU_PROPERTIES: dict = {
 # iterating without editing config.plist by hand, e.g. "-igfxvesa -v debug=0x100".
 _MBA8_EXTRA_BOOT_ARGS: str = ""
 
+# Optional csr-active-config override for the MacBookAir8,x build ("" = leave
+# OCLP's normal SIP handling alone). albert-mueller's T2 fork forces SIP fully
+# off on T2 Macs - partial SIP is reported to cause thermal throttling during
+# OpenCore boot. Try "0x00000FFF" if the machine boots hot / stalls early
+# (use the padded 8-digit form so the value lands as a full 4-byte blob).
+_MBA8_CUSTOM_SIP: str = ""
+
 
 class BuildGraphicsAudio:
     """
@@ -242,9 +249,15 @@ class BuildGraphicsAudio:
             self.config["NVRAM"]["Add"]["7C436110-AB2A-4BBB-A880-FE41995C9F82"]["boot-args"] = boot_args
             logging.info(f"- Appended MacBookAir8,x boot-args: {_MBA8_EXTRA_BOOT_ARGS.strip()}")
 
+        if _MBA8_CUSTOM_SIP.strip():
+            # Consumed later by security.BuildSecurity (runs after graphics_audio)
+            self.constants.custom_sip_value = _MBA8_CUSTOM_SIP.strip()
+            logging.info(f"- Overriding SIP value for MacBookAir8,x: {_MBA8_CUSTOM_SIP.strip()}")
+
         self.config["#Revision"]["Experimental-MBA8-Framebuffer"] = ", ".join(
             f"{k}={v}" for k, v in _MBA8_IGPU_PROPERTIES.items() if v != ""
-        ) + (f" | boot-args: {_MBA8_EXTRA_BOOT_ARGS.strip()}" if _MBA8_EXTRA_BOOT_ARGS.strip() else "")
+        ) + (f" | boot-args: {_MBA8_EXTRA_BOOT_ARGS.strip()}" if _MBA8_EXTRA_BOOT_ARGS.strip() else "") \
+          + (f" | sip: {_MBA8_CUSTOM_SIP.strip()}" if _MBA8_CUSTOM_SIP.strip() else "")
 
 
     def _backlight_path_detection(self) -> None:
