@@ -48,8 +48,13 @@ class os_conversion:
         """
         if os.startswith("10."):
             return (int(os.split(".")[1]) + 4)
-        else:
-            return (int(os.split(".")[0]) + 9)
+
+        major = int(os.split(".")[0])
+        if major >= 26:
+            # macOS 26, Tahoe: marketing version jumped 15 -> 26 while XNU only
+            # advanced 24 -> 25 (one-time discontinuity)
+            return (major - 1)
+        return (major + 9)
 
 
     def kernel_to_os(kernel: int) -> str:
@@ -62,6 +67,9 @@ class os_conversion:
         Returns:
             str: OS version
         """
+        if kernel >= os_data.tahoe:
+            # macOS 26, Tahoe onwards: XNU 25 maps to marketing version 26
+            return str((kernel + 1))
         if kernel >= os_data.big_sur:
             return str((kernel - 9))
         else:

@@ -1,6 +1,11 @@
 # OpenCore Legacy Patcher changelog
 
 ## 2.5.0
+- macOS Tahoe bring-up (work in progress):
+  - Raise root patch and installer support ceiling to macOS 26, Tahoe
+  - Fix XNU <-> marketing version conversion for the macOS 15 -> 26 discontinuity
+  - Add Intel Kaby Lake graphics patch set (covers Amber Lake-Y / UHD 617)
+  - Restore iMac18,1 and MacBookAir8,x as supported SMBIOS targets
 - Disable repatching a dirty root volume
   - Prevents issues if existing patches are partially overwritten
   - Thanks @crystall1nedev!

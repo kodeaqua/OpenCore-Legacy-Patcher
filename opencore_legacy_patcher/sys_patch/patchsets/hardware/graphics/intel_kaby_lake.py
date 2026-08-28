@@ -78,7 +78,8 @@ class IntelKabyLake(BaseHardware):
         last shipped in macOS 15, Sequoia
         """
         # TODO: create matching PatcherSupportPkg directories
-        return "15.6" if self._xnu_major < os_data.tahoe else "15.6-26"
+        # Binaries sourced from the last Sequoia release (15.7), adjusted per XNU major
+        return "15.7" if self._xnu_major < os_data.tahoe else f"15.7-{self._xnu_major}"
 
 
     def _resolve_kaby_lake_framebuffers(self) -> str:
@@ -88,7 +89,8 @@ class IntelKabyLake(BaseHardware):
         - AppleIntelKBLGraphicsFramebuffer.kext
         """
         # TODO: create matching PatcherSupportPkg directories
-        return "15.6" if self._xnu_major < os_data.tahoe else "15.6-26"
+        # Binaries sourced from the last Sequoia release (15.7), adjusted per XNU major
+        return "15.7" if self._xnu_major < os_data.tahoe else f"15.7-{self._xnu_major}"
 
 
     def _model_specific_patches(self) -> dict:
